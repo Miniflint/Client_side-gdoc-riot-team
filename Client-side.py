@@ -46,7 +46,7 @@ class connect_to_server:
 				error_occured("Unable to connect to the server")
 		api_key = client.recv(128).decode(ENCODING)
 		client.send(bytes(str(VERSION), encoding=ENCODING))
-		check_version = client.recv(128).decode(ENCODING)
+		check_version = client.recv(256).decode(ENCODING)
 		if (check_version != ""):
 			print(check_version)
 		if (api_key):
@@ -69,7 +69,8 @@ class get_last_match_infos:
 		if (death == 0 or death == 1):
 			return 100
 		kda = (kill + assist) / death
-		return round(kda, 2)
+		change_dot = str(round(kda, 2))
+		return change_dot.replace('.', ',')
 
 	def convert_time(timestamp_start:int, timestamp_end:int):
 		"""Convert timestamp into human readable format
@@ -78,8 +79,6 @@ class get_last_match_infos:
 		start_time = time.strftime('%d.%m.%Y %H:%M', time.localtime(timestamp_start / 1000))
 		seconds = (timestamp_start - timestamp_end) / 1000
 		minutes = str(timedelta(seconds=int(seconds)))
-		if (minutes[0] == '0'):
-			minutes[:2]
 		return minutes, start_time
 
 	def print_all(all):
@@ -93,7 +92,9 @@ class get_last_match_infos:
 
 	def get_kill_part(player_kill, player_assists, total_kill):
 		"""Calculate kill participation"""
-		return round((total_kill / 100) * (player_kill + player_assists), 2)
+		kill_part = ((player_kill + player_assists) / total_kill) * 100
+		kill_round = round(kill_part, 2)
+		return f"{str(kill_round).replace('.', ',')}%"
 
 	def get_champ_and_stats(dict_infos:dict, team_infos:dict, game_start, game_duration, game_id):
 		"""Make the 2d Array with a dictionnary\n
@@ -130,7 +131,7 @@ class get_last_match_infos:
 			farm =			keys['totalMinionsKilled']
 			cs_per_minute =	round(int(farm)/60, 2)
 			pink_ward = 	keys['sightWardsBoughtInGame']
-			kda = f"{get_last_match_infos.get_kda(kills, deaths, assists)}%"
+			kda = f"{get_last_match_infos.get_kda(kills, deaths, assists)}"
 			if (keys['win']):
 				win_or_lose = "WIN"
 			else:
