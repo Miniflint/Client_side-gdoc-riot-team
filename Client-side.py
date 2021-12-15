@@ -10,7 +10,7 @@ ENCODING = "utf-8"
 REGION_SUMMONER = "euw1"
 REGION_MATCH = 'europe'
 FILENAME_STATS = "game_stats.txt"
-VERSION = 1.21
+VERSION = 1.23
 
 def error_occured(msg, check = False):
 	print(f"[Error] : {msg}")
