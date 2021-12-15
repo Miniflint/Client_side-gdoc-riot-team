@@ -47,7 +47,7 @@ class connect_to_server:
 				error_occured("Unable to connect to the server")
 		api_key = client.recv(128).decode(ENCODING)
 		client.send(bytes(str(VERSION), encoding=ENCODING))
-		check_version = client.recv(256).decode(ENCODING)
+		check_version = client.recv(1024).decode(ENCODING)
 		if (check_version != ""):
 			print(check_version)
 		if (api_key):
