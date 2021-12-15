@@ -77,9 +77,10 @@ class get_last_match_infos:
 		
 		Get Game time"""
 		start_time = time.strftime('%d/%m/%Y %H:%M', time.localtime(timestamp_start / 1000))
-		seconds = (timestamp_start - timestamp_end) / 1000
-		minutes = str(timedelta(seconds=int(seconds)))
-		return minutes, start_time
+		seconds = (timestamp_end - timestamp_start) / 1000
+		real_time = str(timedelta(seconds=int(seconds)))
+		for_farm = round((seconds / 60), 2)
+		return real_time, start_time, for_farm
 
 	def print_all(all):
 		"""Write the 2d array in the file"""
@@ -97,7 +98,7 @@ class get_last_match_infos:
 		kill_round = round(kill_part, 2)
 		return f"{kill_round}%"
 
-	def get_champ_and_stats(dict_infos:dict, team_infos:dict, game_start, game_duration, game_id):
+	def get_champ_and_stats(dict_infos:dict, team_infos:dict, game_start, game_duration, game_id, game_time):
 		"""Make the 2d Array with a dictionnary\n
 
 		1. name (summoner name 'Miniflint')
@@ -130,7 +131,7 @@ class get_last_match_infos:
 			ward_placed =	keys['wardsPlaced']
 			vision_score =	keys['visionScore']
 			farm =			keys['totalMinionsKilled']
-			cs_per_minute =	round(int(farm)/60, 2)
+			cs_per_minute =	round(int(farm)/game_time, 2)
 			pink_ward = 	keys['sightWardsBoughtInGame']
 			kda = f"{get_last_match_infos.get_kda(kills, deaths, assists)}"
 			if (keys['win']):
@@ -163,13 +164,13 @@ def send_request(summoners_name, match_nb):
 	last_match, match_id = get_last_match_infos.get_last_match(summoners_name, match_nb)
 
 	print("Informations about the time of the match...")
-	game_duration, time_game_start = get_last_match_infos.convert_time(last_match['info']['gameEndTimestamp'], last_match['info']['gameStartTimestamp'])
+	game_duration, time_game_start, csing = get_last_match_infos.convert_time(last_match['info']['gameStartTimestamp'], last_match['info']['gameEndTimestamp'])
 
 	participant = last_match['info']['participants']
 	teams = last_match['info']['teams']
 
 	print("informations about the stats of the match...")
-	champ_game = get_last_match_infos.get_champ_and_stats(participant, teams, str(time_game_start), str(game_duration), match_id)
+	champ_game = get_last_match_infos.get_champ_and_stats(participant, teams, str(time_game_start), str(game_duration), match_id, csing)
 	get_last_match_infos.print_all(champ_game)
 	return
 
