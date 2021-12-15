@@ -3,13 +3,14 @@ from datetime import timedelta
 from sys import exit as sys_exit
 import time
 import socket
+from os import path
 
-PORT = 80
+PORT = 25500
 ENCODING = "utf-8"
 REGION_SUMMONER = "euw1"
 REGION_MATCH = 'europe'
-FILENAME = "game_stats.txt"
-VERSION = 1.1
+FILENAME_STATS = "game_stats.txt"
+VERSION = 1.21
 
 def error_occured(msg, check = False):
 	print(f"[Error] : {msg}")
@@ -69,24 +70,24 @@ class get_last_match_infos:
 		if (death == 0 or death == 1):
 			return 100
 		kda = (kill + assist) / death
-		change_dot = str(round(kda, 2))
-		return change_dot.replace('.', ',')
+		return str(round(kda, 2))
 
 	def convert_time(timestamp_start:int, timestamp_end:int):
 		"""Convert timestamp into human readable format
 		
 		Get Game time"""
-		start_time = time.strftime('%d.%m.%Y %H:%M', time.localtime(timestamp_start / 1000))
+		start_time = time.strftime('%d/%m/%Y %H:%M', time.localtime(timestamp_start / 1000))
 		seconds = (timestamp_start - timestamp_end) / 1000
 		minutes = str(timedelta(seconds=int(seconds)))
 		return minutes, start_time
 
 	def print_all(all):
 		"""Write the 2d array in the file"""
-		f = open(FILENAME, "w")
+		f = open(FILENAME_STATS, "w")
 		for x in all:
 			for i in x:
-				f.write(f"{i}\t")
+				write_data = str(i).replace(".",",")
+				f.write(f"{write_data}\t")
 			f.write("\n")
 		f.close()
 
@@ -94,7 +95,7 @@ class get_last_match_infos:
 		"""Calculate kill participation"""
 		kill_part = ((player_kill + player_assists) / total_kill) * 100
 		kill_round = round(kill_part, 2)
-		return f"{str(kill_round).replace('.', ',')}%"
+		return f"{kill_round}%"
 
 	def get_champ_and_stats(dict_infos:dict, team_infos:dict, game_start, game_duration, game_id):
 		"""Make the 2d Array with a dictionnary\n
@@ -144,22 +145,22 @@ class get_last_match_infos:
 			stats.append([name, game_start, champ, game_id, kills, deaths, assists, kda, win_or_lose, kill_part, ward_placed, pink_ward, vision_score, farm, cs_per_minute, game_duration, total_kill_team])
 		return stats
 
-	def get_last_match(summoners_name):
+	def get_last_match(summoners_name, match_nb:int):
 		"""Get last match of the desired summoner"""
 		try:
 			me = WATCHER.summoner.by_name(REGION_SUMMONER, summoners_name)
 		except:
 			error_occured("Wrong riot api key")
 		my_matches = WATCHER.match.matchlist_by_puuid(REGION_MATCH, me['puuid'])
-		last_match = my_matches[0]
+		last_match = my_matches[match_nb]
 		match_detail = WATCHER.match.by_id(REGION_MATCH, last_match)
 		
 		return match_detail, match_detail['metadata']['matchId']
 
-def send_request(summoners_name):
+def send_request(summoners_name, match_nb):
 	"""Second main. i just had no idea what to call it"""
-	print(f"informations about last match of : {summoners_name}...")
-	last_match, match_id = get_last_match_infos.get_last_match(summoners_name)
+	print(f"informations about the match of : {summoners_name}...")
+	last_match, match_id = get_last_match_infos.get_last_match(summoners_name, match_nb)
 
 	print("Informations about the time of the match...")
 	game_duration, time_game_start = get_last_match_infos.convert_time(last_match['info']['gameEndTimestamp'], last_match['info']['gameStartTimestamp'])
@@ -172,23 +173,47 @@ def send_request(summoners_name):
 	get_last_match_infos.print_all(champ_game)
 	return
 
+class file:
+	FILENAME = "player.txt"
+	def read_file(self):
+		nb = 1
+		if (path.exists(self.FILENAME)):
+			f = open(self.FILENAME, "r", encoding=ENCODING)
+			for line in f:
+				print(f"{nb}. {line}", end="")
+				nb += 1
+			print(f"\n{nb}. Others")
+			f.close()
+			return (nb + 1)
+		else:
+			error_occured(f"Couldn't find the file : {self.FILENAME}")
+
+	def get_line(self, line_nb):
+		f = open(self.FILENAME, "r", encoding=ENCODING)
+		try:
+			output = f.readlines()[line_nb - 1].strip()
+		except:
+			output = "Others"
+		f.close()
+		return output
+
 def main():
-	list_name = {
-		"1": "darkal181", "2": "Xhentio",
-		"3": "Sarazïn", "4": "Miniflint",
-		"5": "Pâpillon", "6": "Autre"}
-	for key in list_name:
-		print(f"{key}. {list_name[key]}")
+	init = file()
+	max_line = init.read_file()
 	user_input = int(input("Choose a number : "))
-	if (user_input > 0 and user_input < 7):
-		print(f"You choose : {list_name[str(user_input)]}")
-		name = list_name[str(user_input)]
-		if (user_input == 6):
+	if (user_input > 0 and user_input < max_line):
+		name = init.get_line(user_input)
+		print(f"You choose : {name}")
+		if (user_input == max_line - 1):
 			name = input("Enter your league name : ")
 	else:
 		error_occured("Enter a valable number", True)
-	send_request(name)
-	print(f"Select your name ({name}) in this file : {FILENAME}")
+	print("Enter a match number (0 -> most recent to 5 -> oldest)")
+	match_nb = int(input("Enter a match : "))
+	if (match_nb > 6 or match_nb < 0):
+		error_occured("Enter a valable number", True)
+	send_request(name, match_nb)
+	print(f"\nSelect your name ({name}) in this file : {FILENAME_STATS}")
 	time.sleep(15)
 	sys_exit()
 
