@@ -10,7 +10,7 @@ ENCODING = "utf-8"
 REGION_SUMMONER = "euw1"
 REGION_MATCH = 'europe'
 FILENAME_STATS = "game_stats.txt"
-VERSION = 1.23
+VERSION = 1.24
 
 def error_occured(msg, check = False):
 	print(f"[Error] : {msg}")
@@ -30,12 +30,7 @@ class connect_to_server:
 		client.connect(addr)
 		return client
 
-	def get_msg() -> str:
-		"""
-		Function to communicate with my server
-		
-		Get the key from a txt file
-		"""
+	def try_connect():
 		host_name = ["ubuntu", "startrek.synology.me"]
 		print("Finding API KEY from miniflint's server")
 		try:
@@ -45,8 +40,18 @@ class connect_to_server:
 				client = connect_to_server.connect_server(host_name[0])
 			except:
 				error_occured("Unable to connect to the server")
+		return client
+
+	def get_msg() -> str:
+		"""
+		Function to communicate with my server
+		
+		Get the key from a txt file
+		"""
+		client = connect_to_server.try_connect()
 		api_key = client.recv(128).decode(ENCODING)
 		client.send(bytes(str(VERSION), encoding=ENCODING))
+		print("Im here")
 		check_version = client.recv(1024).decode(ENCODING)
 		if (check_version != ""):
 			print(check_version)
@@ -57,6 +62,8 @@ class connect_to_server:
 				error_occured("Wrong riot api key")
 		else:
 			error_occured("Unable to decode data from the server")
+
+
 
 API_KEY = connect_to_server.get_msg()
 WATCHER = riotwatcher.LolWatcher(API_KEY)
@@ -201,8 +208,11 @@ class file:
 def main():
 	init = file()
 	max_line = init.read_file()
-	user_input = int(input("Choose a number : "))
-	if (user_input > 0 and user_input < max_line):
+	try:
+		user_input = int(input("Choose a number : "))
+	except:
+		error_occured("The unput wasn't a number", True)
+	if (user_input > 0 and user_input <= max_line):
 		name = init.get_line(user_input)
 		print(f"You choose : {name}")
 		if (user_input == max_line - 1):
@@ -210,7 +220,10 @@ def main():
 	else:
 		error_occured("Enter a valable number", True)
 	print("Enter a match number (0 -> most recent to 5 -> oldest)")
-	match_nb = int(input("Enter a match : "))
+	try:
+		match_nb = int(input("Enter a match : "))
+	except:
+		error_occured("The unput wasn't a number", True)
 	if (match_nb > 6 or match_nb < 0):
 		error_occured("Enter a valable number", True)
 	send_request(name, match_nb)
