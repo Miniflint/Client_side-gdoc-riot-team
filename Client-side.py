@@ -3,14 +3,14 @@ from datetime import timedelta
 from sys import exit as sys_exit
 import time
 import socket
-from os import path, startfile
+import os
 
 PORT = 25500
 ENCODING = "utf-8"
 REGION_SUMMONER = "euw1"
 REGION_MATCH = 'europe'
 FILENAME_STATS = "game_stats.txt"
-VERSION = 1.25
+VERSION = 1.252
 
 def error_occured(msg, check = False):
 	print(f"[Error] : {msg}")
@@ -106,7 +106,6 @@ class get_last_match_infos:
 
 	def get_champ_and_stats(dict_infos:dict, team_infos:dict, game_start, game_duration, game_id, game_time):
 		"""Make the 2d Array with a dictionnary\n
-
 		1. name (summoner name 'Miniflint')
 		2. game_start (Time at which the game started -> 19.02.2021 19:32)
 		3. champ (Champion -> 'Jax')
@@ -123,7 +122,6 @@ class get_last_match_infos:
 		14. cs_per_minute (farm per minute -> farm / 60)
 		15. game_duration (How long the game have been going)
 		16. total_kill_team (Total kill of the team)
-
 		This is the data collected and stored in the 2d array. for each player
 		"""
 		stats = []
@@ -184,7 +182,7 @@ class file:
 	FILENAME = "player.txt"
 	def read_file(self):
 		nb = 1
-		if (path.exists(self.FILENAME)):
+		if (os.path.exists(self.FILENAME)):
 			f = open(self.FILENAME, "r", encoding=ENCODING)
 			for line in f:
 				print(f"{nb}. {line}", end="")
@@ -228,7 +226,7 @@ def main():
 	send_request(name, match_nb)
 	print(f"\nSelect your name ({name}) in this file : {FILENAME_STATS}")
 	time.sleep(3)
-	startfile(FILENAME_STATS)
+	os.startfile(FILENAME_STATS)
 	time.sleep(12)
 	sys_exit()
 
