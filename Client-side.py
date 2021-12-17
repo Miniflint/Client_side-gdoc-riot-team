@@ -1,16 +1,16 @@
-import riotwatcher
+from riotwatcher import LolWatcher
 from datetime import timedelta
 from sys import exit as sys_exit
 import time
 import socket
-from os import path
+from os import path, startfile
 
 PORT = 25500
 ENCODING = "utf-8"
 REGION_SUMMONER = "euw1"
 REGION_MATCH = 'europe'
 FILENAME_STATS = "game_stats.txt"
-VERSION = 1.24
+VERSION = 1.25
 
 def error_occured(msg, check = False):
 	print(f"[Error] : {msg}")
@@ -51,7 +51,6 @@ class connect_to_server:
 		client = connect_to_server.try_connect()
 		api_key = client.recv(128).decode(ENCODING)
 		client.send(bytes(str(VERSION), encoding=ENCODING))
-		print("Im here")
 		check_version = client.recv(1024).decode(ENCODING)
 		if (check_version != ""):
 			print(check_version)
@@ -64,9 +63,19 @@ class connect_to_server:
 			error_occured("Unable to decode data from the server")
 
 
-
 API_KEY = connect_to_server.get_msg()
-WATCHER = riotwatcher.LolWatcher(API_KEY)
+WATCHER = LolWatcher(API_KEY)
+
+def print_all(all):
+		"""Write the 2d array in the file"""
+		f = open(FILENAME_STATS, "w", encoding=ENCODING)
+		for x in all:	
+			for i in x:
+				write_data = str(i).replace(".", ",")
+				f.write(f"{write_data}\t")
+			f.write("\n")
+		print("Done Writing")
+		f.close()
 
 class get_last_match_infos:
 	"""Infos about last match"""
@@ -88,16 +97,6 @@ class get_last_match_infos:
 		real_time = str(timedelta(seconds=int(seconds)))
 		for_farm = round((seconds / 60), 2)
 		return real_time, start_time, for_farm
-
-	def print_all(all):
-		"""Write the 2d array in the file"""
-		f = open(FILENAME_STATS, "w")
-		for x in all:
-			for i in x:
-				write_data = str(i).replace(".",",")
-				f.write(f"{write_data}\t")
-			f.write("\n")
-		f.close()
 
 	def get_kill_part(player_kill, player_assists, total_kill):
 		"""Calculate kill participation"""
@@ -178,7 +177,7 @@ def send_request(summoners_name, match_nb):
 
 	print("informations about the stats of the match...")
 	champ_game = get_last_match_infos.get_champ_and_stats(participant, teams, str(time_game_start), str(game_duration), match_id, csing)
-	get_last_match_infos.print_all(champ_game)
+	print_all(champ_game)
 	return
 
 class file:
@@ -211,7 +210,7 @@ def main():
 	try:
 		user_input = int(input("Choose a number : "))
 	except:
-		error_occured("The unput wasn't a number", True)
+		error_occured("The input wasn't a number", True)
 	if (user_input > 0 and user_input <= max_line):
 		name = init.get_line(user_input)
 		print(f"You choose : {name}")
@@ -223,12 +222,14 @@ def main():
 	try:
 		match_nb = int(input("Enter a match : "))
 	except:
-		error_occured("The unput wasn't a number", True)
+		error_occured("The input wasn't a number", True)
 	if (match_nb > 6 or match_nb < 0):
 		error_occured("Enter a valable number", True)
 	send_request(name, match_nb)
 	print(f"\nSelect your name ({name}) in this file : {FILENAME_STATS}")
-	time.sleep(15)
+	time.sleep(3)
+	startfile(FILENAME_STATS)
+	time.sleep(12)
 	sys_exit()
 
 main()
