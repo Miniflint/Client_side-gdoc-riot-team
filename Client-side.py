@@ -10,7 +10,7 @@ ENCODING = "utf-8"
 REGION_SUMMONER = "euw1"
 REGION_MATCH = 'europe'
 FILENAME_STATS = "game_stats.txt"
-VERSION = 1.252
+VERSION = 1.27
 
 def error_occured(msg, check = False):
 	print(f"[Error] : {msg}")
@@ -135,8 +135,8 @@ class get_last_match_infos:
 			ward_placed =	keys['wardsPlaced']
 			vision_score =	keys['visionScore']
 			farm =			keys['totalMinionsKilled']
+			pink_ward = 	keys['detectorWardsPlaced']
 			cs_per_minute =	round(int(farm)/game_time, 2)
-			pink_ward = 	keys['sightWardsBoughtInGame']
 			kda = f"{get_last_match_infos.get_kda(kills, deaths, assists)}"
 			if (keys['win']):
 				win_or_lose = "WIN"
