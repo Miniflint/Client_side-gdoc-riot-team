@@ -5,9 +5,11 @@ from Crypto.Cipher import AES
 import time
 import socket
 import os
+import subprocess
+import platform
 
-CRYPTO_KEY = "CRYPTO KEY"
-NONCE = "NONCE KEY"
+CRYPTO_KEY = "CRYPTO_KEY"
+NONCE = "NONCE_KEY"
 PORT = 25500
 ENCODING = "utf-8"
 REGION_SUMMONER = "euw1"
@@ -145,7 +147,7 @@ class get_last_match_infos:
 		11. ward_placed (Number of ward placed)
 		12. vision_score (Score of vision by the player)
 		13. farm (farm of the player)
-		14. cs_per_minute (farm per minute -> farm / 60)
+		14. cs_per_minute (farm per minute -> farm / nb_min_in_game)
 		15. game_duration (How long the game have been going)
 		16. total_kill_team (Total kill of the team)
 		This is the data collected and stored in the 2d array. for each player
@@ -228,32 +230,58 @@ class file:
 		f.close()
 		return output
 
+def open_file():
+	get_os = platform.system()
+	if (get_os == 'Windows'):
+		os.startfile(FILENAME_STATS)
+	elif (get_os == 'Darwin'):
+		subprocess.call(('open', FILENAME_STATS))
+	else:
+		subprocess.call(('xdg-open', FILENAME_STATS))
+
+def printdots(str_write, nb_dots):
+    for x in range(0, nb_dots + nb_dots):
+        print(str_write + ("." * (x % 4)) + "\r", end='')
+        if (x % 4 == 0):
+            print(f"{str_write}    \r", end='')
+        time.sleep(0.4)
+
 def main():
 	init = file()
-	max_line = init.read_file()
-	try:
-		user_input = int(input("Choose a number : "))
-	except Exception:
-		error_occured("The input wasn't a number", True)
-	if (user_input > 0 and user_input <= max_line):
-		name = init.get_line(user_input)
-		print(f"You choose : {name}")
-		if (user_input == max_line - 1):
-			name = input("Enter your league name : ")
-	else:
-		error_occured("Enter a valable number", True)
-	print("Enter a match number (0 -> most recent to 5 -> oldest)")
-	try:
-		match_nb = int(input("Enter a match : "))
-	except Exception:
-		error_occured("The input wasn't a number", True)
-	if (match_nb > 6 or match_nb < 0):
-		error_occured("Enter a valable number", True)
-	send_request(name, match_nb)
-	print(f"\nSelect your name ({name}) in this file : {FILENAME_STATS}")
-	time.sleep(3)
-	os.startfile(FILENAME_STATS)
-	time.sleep(12)
+	again = True
+	match_nb, user_input = False, False
+	while again:
+		max_line = init.read_file()
+		while (user_input is False):
+			try:
+				user_input = int(input("Choose a number : "))
+			except Exception:
+				print("The input wasn't a number\n")
+		if (user_input > 0 and user_input <= max_line):
+			name = init.get_line(user_input)
+			print(f"You choose : {name}")
+			if (user_input == max_line - 1):
+				name = input("Enter your league name : ")
+		else:
+			error_occured("Enter a valable number", True)
+		print("Enter a match number (0 -> most recent to 5 -> oldest)")
+		while (match_nb is False):
+			try:
+				match_nb = int(input("Enter a match : "))
+			except Exception:
+				print("The input wasn't a number\n")
+		if (match_nb > 6 or match_nb < 0):
+			error_occured("Enter a valable number", True)
+		send_request(name, match_nb)
+		print(f"\nSelect your name ({name}) in this file : {FILENAME_STATS}")
+		time.sleep(2)
+		open_file()
+		check_again = input("Encore ? [Y/y][N/n] : ").lower()
+		if (check_again == 'y'):
+			again, match_nb, user_input = True, False, False
+		else:
+			again = False
+	printdots("Exiting", 9)
 	sys_exit()
 
 main()
