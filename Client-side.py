@@ -6,8 +6,8 @@ import time
 import socket
 import os
 
-CRYPTO_KEY = "CRYPTO_KEY HERE"
-NONCE = "NONCE HERE"
+CRYPTO_KEY = "CRYPTO KEY"
+NONCE = "NONCE KEY"
 PORT = 25500
 ENCODING = "utf-8"
 REGION_SUMMONER = "euw1"
@@ -71,10 +71,11 @@ class connect_to_server:
 		"""
 		encrypt_and_decrypt = Encryption()
 
-		version_encrypted = encrypt_and_decrypt.encrypting_data(str(VERSION)).hex()
+		# version_encrypted = encrypt_and_decrypt.encrypting_data(str(VERSION)).hex()
 		client = connect_to_server.try_connect()
 		api_key = client.recv(524).decode(ENCODING)
-		client.send(bytes(f"{version_encrypted}", encoding=ENCODING))
+		client.send(bytes(f"{str(VERSION)}", encoding=ENCODING))
+		# client.send(bytes(f"{str(version_encrypted)}", encoding=ENCODING))
 		check_version = client.recv(1024).decode(ENCODING)
 		api_key_decoded = encrypt_and_decrypt.decrypt_data(bytes.fromhex(api_key))
 		if (check_version != ""):
