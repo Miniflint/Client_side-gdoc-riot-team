@@ -1,16 +1,37 @@
 from riotwatcher import LolWatcher
 from datetime import timedelta
 from sys import exit as sys_exit
+from Crypto.Cipher import AES
 import time
 import socket
 import os
 
+CRYPTO_KEY = "CRYPTO_KEY HERE"
+NONCE = "NONCE HERE"
 PORT = 25500
 ENCODING = "utf-8"
 REGION_SUMMONER = "euw1"
 REGION_MATCH = 'europe'
 FILENAME_STATS = "game_stats.txt"
-VERSION = 1.27
+VERSION = 1.31
+
+class Encryption:
+	def base_crypt(self):
+		key_bytes = bytes.fromhex(CRYPTO_KEY)
+		nonce_bytes = bytes.fromhex(NONCE)
+		cipher = AES.new(key_bytes, AES.MODE_EAX, nonce=nonce_bytes)
+		return cipher
+
+	def decrypt_data(self, encrypted_str):
+		cipher = self.base_crypt()
+		plain_text = cipher.decrypt(encrypted_str).decode('utf-8')
+		return plain_text
+
+	def encrypting_data(self, str_to_encode):
+		cipher = self.base_crypt()
+		str_encoded = bytes(str_to_encode, encoding='utf-8')
+		cipher_text = cipher.encrypt_and_digest(str_encoded)[0]
+		return cipher_text
 
 def error_occured(msg, check = False):
 	print(f"[Error] : {msg}")
@@ -35,10 +56,10 @@ class connect_to_server:
 		print("Finding API KEY from miniflint's server")
 		try:
 			client = connect_to_server.connect_server(host_name[1])
-		except:
+		except Exception:
 			try:
 				client = connect_to_server.connect_server(host_name[0])
-			except:
+			except Exception:
 				error_occured("Unable to connect to the server")
 		return client
 
@@ -48,15 +69,19 @@ class connect_to_server:
 		
 		Get the key from a txt file
 		"""
+		encrypt_and_decrypt = Encryption()
+
+		version_encrypted = encrypt_and_decrypt.encrypting_data(str(VERSION)).hex()
 		client = connect_to_server.try_connect()
-		api_key = client.recv(128).decode(ENCODING)
-		client.send(bytes(str(VERSION), encoding=ENCODING))
+		api_key = client.recv(524).decode(ENCODING)
+		client.send(bytes(f"{version_encrypted}", encoding=ENCODING))
 		check_version = client.recv(1024).decode(ENCODING)
+		api_key_decoded = encrypt_and_decrypt.decrypt_data(bytes.fromhex(api_key))
 		if (check_version != ""):
 			print(check_version)
-		if (api_key):
-			if (len(api_key) == 42):
-				return api_key
+		if (api_key_decoded):
+			if (len(api_key_decoded) == 42):
+				return api_key_decoded
 			else:
 				error_occured("Wrong riot api key")
 		else:
@@ -154,7 +179,7 @@ class get_last_match_infos:
 		"""Get last match of the desired summoner"""
 		try:
 			me = WATCHER.summoner.by_name(REGION_SUMMONER, summoners_name)
-		except:
+		except Exception:
 			error_occured("Wrong riot api key")
 		my_matches = WATCHER.match.matchlist_by_puuid(REGION_MATCH, me['puuid'])
 		last_match = my_matches[match_nb]
@@ -197,7 +222,7 @@ class file:
 		f = open(self.FILENAME, "r", encoding=ENCODING)
 		try:
 			output = f.readlines()[line_nb - 1].strip()
-		except:
+		except Exception:
 			output = "Others"
 		f.close()
 		return output
@@ -207,7 +232,7 @@ def main():
 	max_line = init.read_file()
 	try:
 		user_input = int(input("Choose a number : "))
-	except:
+	except Exception:
 		error_occured("The input wasn't a number", True)
 	if (user_input > 0 and user_input <= max_line):
 		name = init.get_line(user_input)
@@ -219,7 +244,7 @@ def main():
 	print("Enter a match number (0 -> most recent to 5 -> oldest)")
 	try:
 		match_nb = int(input("Enter a match : "))
-	except:
+	except Exception:
 		error_occured("The input wasn't a number", True)
 	if (match_nb > 6 or match_nb < 0):
 		error_occured("Enter a valable number", True)
