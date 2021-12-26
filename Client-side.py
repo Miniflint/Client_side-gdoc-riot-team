@@ -54,7 +54,7 @@ class connect_to_server:
 		return client
 
 	def try_connect():
-		host_name = ["ubuntu", "startrek.synology.me"]
+		host_name = ["test", "test2"]
 		print("Finding API KEY from miniflint's server")
 		try:
 			client = connect_to_server.connect_server(host_name[1])
