@@ -15,7 +15,7 @@ ENCODING = "utf-8"
 REGION_SUMMONER = "euw1"
 REGION_MATCH = 'europe'
 FILENAME_STATS = "game_stats.txt"
-VERSION = 1.31
+VERSION = 1.32
 
 class Encryption:
 	def base_crypt(self):
@@ -54,7 +54,7 @@ class connect_to_server:
 		return client
 
 	def try_connect():
-		host_name = ["test", "test2"]
+		host_name = ["SERVER1", "SERVER2"]
 		print("Finding API KEY from miniflint's server")
 		try:
 			client = connect_to_server.connect_server(host_name[1])
@@ -73,11 +73,9 @@ class connect_to_server:
 		"""
 		encrypt_and_decrypt = Encryption()
 
-		# version_encrypted = encrypt_and_decrypt.encrypting_data(str(VERSION)).hex()
 		client = connect_to_server.try_connect()
 		api_key = client.recv(524).decode(ENCODING)
 		client.send(bytes(f"{str(VERSION)}", encoding=ENCODING))
-		# client.send(bytes(f"{str(version_encrypted)}", encoding=ENCODING))
 		check_version = client.recv(1024).decode(ENCODING)
 		api_key_decoded = encrypt_and_decrypt.decrypt_data(bytes.fromhex(api_key))
 		if (check_version != ""):
@@ -89,7 +87,6 @@ class connect_to_server:
 				error_occured("Wrong riot api key")
 		else:
 			error_occured("Unable to decode data from the server")
-
 
 API_KEY = connect_to_server.get_msg()
 WATCHER = LolWatcher(API_KEY)
@@ -162,7 +159,7 @@ class get_last_match_infos:
 			assists =		keys['assists']
 			ward_placed =	keys['wardsPlaced']
 			vision_score =	keys['visionScore']
-			farm =			keys['totalMinionsKilled']
+			farm =			int(keys['totalMinionsKilled']) + int(keys['neutralMinionsKilled'])
 			pink_ward = 	keys['detectorWardsPlaced']
 			cs_per_minute =	round(int(farm)/game_time, 2)
 			kda = f"{get_last_match_infos.get_kda(kills, deaths, assists)}"
@@ -175,7 +172,7 @@ class get_last_match_infos:
 				if (teamID == team['teamId']):
 					total_kill_team = team['objectives']['champion']['kills']
 			kill_part = get_last_match_infos.get_kill_part(kills, assists, total_kill_team)
-			stats.append([name, game_start, champ, game_id, kills, deaths, assists, kda, win_or_lose, kill_part, ward_placed, pink_ward, vision_score, farm, cs_per_minute, game_duration, total_kill_team])
+			stats.append([name, game_start, champ, game_id, kills, deaths, assists, kda, win_or_lose, kill_part, ward_placed, pink_ward, vision_score, str(farm), cs_per_minute, game_duration, total_kill_team])
 		return stats
 
 	def get_last_match(summoners_name, match_nb:int):
@@ -183,10 +180,12 @@ class get_last_match_infos:
 		try:
 			me = WATCHER.summoner.by_name(REGION_SUMMONER, summoners_name)
 		except Exception:
-			error_occured("Wrong riot api key")
+			error_occured("Wrong riot api key / ")
 		my_matches = WATCHER.match.matchlist_by_puuid(REGION_MATCH, me['puuid'])
 		last_match = my_matches[match_nb]
 		match_detail = WATCHER.match.by_id(REGION_MATCH, last_match)
+		with open("data.json", "w", encoding="utf-8") as f:
+			f.write(str(match_detail))
 		
 		return match_detail, match_detail['metadata']['matchId']
 
@@ -204,7 +203,7 @@ def send_request(summoners_name, match_nb):
 	print("informations about the stats of the match...")
 	champ_game = get_last_match_infos.get_champ_and_stats(participant, teams, str(time_game_start), str(game_duration), match_id, csing)
 	print_all(champ_game)
-	return
+	return champ_game
 
 class file:
 	FILENAME = "player.txt"
@@ -244,7 +243,7 @@ def printdots(str_write, nb_dots):
         print(str_write + ("." * (x % 4)) + "\r", end='')
         if (x % 4 == 0):
             print(f"{str_write}    \r", end='')
-        time.sleep(0.4)
+        time.sleep(0.2)
 
 def main():
 	init = file()
@@ -281,7 +280,7 @@ def main():
 			again, match_nb, user_input = True, False, False
 		else:
 			again = False
-	printdots("Exiting", 9)
+	printdots("Exiting", 8)
 	sys_exit()
 
 main()
