@@ -56,13 +56,21 @@ class connect_to_server:
 	def try_connect():
 		host_name = ["SERVER1", "SERVER2"]
 		print("Finding API KEY from miniflint's server")
-		try:
-			client = connect_to_server.connect_server(host_name[1])
-		except Exception:
+		for value in host_name:
 			try:
-				client = connect_to_server.connect_server(host_name[0])
+				client = connect_to_server.connect_server(value)
+				break
 			except Exception:
-				error_occured("Unable to connect to the server")
+				pass
+		else:
+			error_occured("Unable to connect to the server")
+		#try:
+		#	client = connect_to_server.connect_server(host_name[1])
+		#except Exception:
+		#	try:
+		#		client = connect_to_server.connect_server(host_name[0])
+		#	except Exception:
+		#		error_occured("Unable to connect to the server")
 		return client
 
 	def get_msg() -> str:
@@ -184,8 +192,6 @@ class get_last_match_infos:
 		my_matches = WATCHER.match.matchlist_by_puuid(REGION_MATCH, me['puuid'])
 		last_match = my_matches[match_nb]
 		match_detail = WATCHER.match.by_id(REGION_MATCH, last_match)
-		with open("data.json", "w", encoding="utf-8") as f:
-			f.write(str(match_detail))
 		
 		return match_detail, match_detail['metadata']['matchId']
 
